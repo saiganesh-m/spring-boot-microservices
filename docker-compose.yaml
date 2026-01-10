@@ -34,6 +34,95 @@ services:
       - "9411:9411"
     networks:
       - postgres
+      - microservices-network
+    restart: unless-stopped
+
+  configms:
+    container_name: configms_container
+    image: shanmukh01/configms
+    depends_on:
+      - servicereg
+    ports:
+      - "8888:8888"
+    networks:
+      - postgres
+      - microservices-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://servicereg:8761/eureka/
+    restart: unless-stopped
+
+  gatewayms:
+    container_name: gatewayms_container
+    image: shanmukh01/gatewayms
+    ports:
+      - "8080:8080"
+    networks:
+      - postgres
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://servicereg:8761/eureka/
+    restart: unless-stopped
+
+  companyms:
+    container_name: companyms_container
+    image: shanmukh01/companyms
+    ports:
+      - "8081:8081"
+    depends_on:
+      - servicereg
+      - configms
+    networks:
+      - postgres
+      - microservices-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    restart: unless-stopped
+
+  jobms:
+    container_name: jobms_container
+    image: shanmukh01/jobms
+    ports:
+      - "8082:8082"
+    depends_on:
+      - servicereg
+      - configms
+    networks:
+      - postgres
+      - microservices-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://servicereg:8761/eureka/
+    restart: unless-stopped
+
+  reviewms:
+    container_name: reviewms_container
+    image: shanmukh01/reviewms
+    ports:
+      - "8083:8083"
+    depends_on:
+      - servicereg
+      - configms
+    networks:
+      - postgres
+      - microservices-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    restart: unless-stopped
+
+  servicereg:
+    container_name: servicereg
+    image: shanmukh01/servicereg
+    ports:
+      - "8761:8761"
+    depends_on:
+      - rabbitmq
+      - zipkin
+      - postgres
+      - pgadmin
+    networks:
+      - postgres
+      - microservices-network
     restart: unless-stopped
 
   rabbitmq:
@@ -44,9 +133,12 @@ services:
       - "15672:15672"
     networks:
       - postgres
+      - microservices-network
     restart: unless-stopped
 networks:
   postgres:
+    driver: bridge
+  microservices-network:
     driver: bridge
 volumes:
   postgres_data:
